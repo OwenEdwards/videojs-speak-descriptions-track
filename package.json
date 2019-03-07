@@ -1,7 +1,7 @@
 {
-  "name": "videojs-playbackrate-adjuster",
+  "name": "videojs-speak-descriptions-track",
   "version": "1.0.0",
-  "description": "A Video.js 7 middleware that adjusts controls based on playback rate",
+  "description": "A Video.js 7 middleware that uses browser speech synthesis to speak descriptions contained in a description text track",
   "main": "dist/es5/index.js",
   "module": "src/js/index.js",
   "scripts": {
@@ -19,7 +19,7 @@
     "videojs-middleware",
     "videojs-plugin"
   ],
-  "author": "Gary Katsevman <me@gkatsev.com>",
+  "author": "Owen Edwards <owen.r.edwards@gmail.com>",
   "license": "MIT",
   "jsnext:main": "src/js/index.js",
   "engines": {
@@ -47,6 +47,7 @@
     "src/"
   ],
   "dependencies": {
+    "global": "4.3.2",
     "video.js": "^7"
   },
   "devDependencies": {
@@ -57,10 +58,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/videojs/videojs-playbackrate-adjuster.git"
+    "url": "git+https://github.com/OwenEdwards/videojs-speak-descriptions-track.git"
   },
   "bugs": {
-    "url": "https://github.com/videojs/videojs-playbackrate-adjuster/issues"
+    "url": "https://github.com/OwenEdwards/videojs-speak-descriptions-track/issues"
   },
-  "homepage": "https://github.com/videojs/videojs-playbackrate-adjuster#readme"
+  "homepage": "https://github.com/OwenEdwards/videojs-speak-descriptions-track#readme"
 }

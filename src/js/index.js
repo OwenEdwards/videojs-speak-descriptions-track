@@ -1,24 +1,281 @@
 import videojs from 'video.js';
+import window from 'global/window';
 
-const createNewRanges = (timeRanges, playbackRate) => {
-  const newRanges = [];
-
-  for (let i = 0; i < timeRanges.length; i++) {
-    newRanges.push([
-      timeRanges.start(i) / playbackRate,
-      timeRanges.end(i) / playbackRate]);
-  }
-
-  return videojs.createTimeRange(newRanges);
+/**
+ * Player status for extended descriptions (playback of descriptions while pausing the tech)
+ *
+ * @typedef extendedPlayerState
+ * @enum
+ */
+const extendedPlayerState = {
+  'unknown': 'unknown',
+  'initialized': 'initialized',
+  'playing': 'playing',
+  'paused': 'paused',
+  'playing-extended': 'playing-extended',
+  'paused-extended': 'paused-extended',
 };
 
-const playbackrateAdjuster = function(player) {
+// TODO: user control over this attribute?
+const audioDuckingFactor = 0.25;
+
+/**
+ * The speakDescriptionsTrackTTS component
+ */
+class speakDescriptionsTrackTTS {
+  /**
+   * Creates an instance of this class.
+   *
+   * @param {Player} player
+   *        The `Player` that this class should be attached to.
+   */
+  constructor(player) {
+    this.player_ = player;
+    this.extendedPlayerState_ = extendedPlayerState['initialized'];
+    this.isDucked = false;
+
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+  }
+
+  /**
+   * Dispose of the `speakDescriptionsTrackTTS`
+   */
+  dispose() {
+  }
+
+  play() {
+    const speechSynthesis = window.speechSynthesis;
+
+    if (speechSynthesis.paused) {
+      speechSynthesis.resume();
+    }
+  }
+
+  pause() {
+    const speechSynthesis = window.speechSynthesis;
+
+    if (speechSynthesis.speaking) {
+      speechSynthesis.pause();
+    }
+  }
+
+  paused() {
+    return (
+      this.extendedPlayerState_ === extendedPlayerState['paused'] ||
+      this.extendedPlayerState_ === extendedPlayerState['paused-extended']
+    );
+  }
+
+  textTrackChange() {
+    const tracks = this.player_.textTracks();
+    let descriptionsTrack = null;
+    let i = tracks.length;
+
+    while (i--) {
+      const track = tracks[i];
+
+      if (track.mode === 'showing') {
+        if (track.kind === 'descriptions') {
+          descriptionsTrack = track;
+        }
+      }
+    }
+
+    if (descriptionsTrack) {
+      this.speakActiveCues(descriptionsTrack);
+    }
+  }
+
+  /**
+   * Use browser Speech Synthesis (aka TTS) to speak active cues, if supported
+   *
+   * @param {TextTrackObject} track Texttrack object to speak
+   * @method speakActiveCues
+   */
+  speakActiveCues(track) {
+    if (!window.SpeechSynthesisUtterance || !window.speechSynthesis) {
+      return;
+    }
+
+    const speechSynthesis = window.speechSynthesis;
+
+    let textToSpeak = [];
+    let startTime = Infinity;
+    let endTime = -Infinity;
+    const ct = this.player_.currentTime();
+
+    if (track.activeCues) {
+      // TODO: Need to handle this logic better; it's possible that a new cue
+      //       started while another is still active. We don't handle that correctly.
+      for (let i = 0; i < track.activeCues.length; i++) {
+        textToSpeak.push(track.activeCues[i].text);
+        startTime = Math.min(track.activeCues[i].startTime, startTime);
+        endTime = Math.max(track.activeCues[i].endTime, endTime);
+      }
+      // TODO: handle any HTML markup in the cues properly; for now,
+      //       we just strip out HTML markup.
+      textToSpeak = textToSpeak.join('\r\n').replace(/<(?:.|\n)*?>/gm, '');
+    }
+
+    if (textToSpeak) {
+      if (speechSynthesis.speaking) {
+        // TODO: Handle description cue collision
+        videojs.log.warn(`Speech synthesis collision (${textToSpeak} - ${this.ssu.text}) : ${ct} : ${this.startTime} : ${this.endTime}`);
+
+        speechSynthesis.cancel();
+
+      } else if (speechSynthesis.paused) {
+        // TODO: Handle if speech synthesis is paused here
+        videojs.log.warn(`Speech synthesis collision (paused) (${textToSpeak} - ${this.ssu.text}) : ${ct} : ${this.startTime} : ${this.endTime}`);
+
+        speechSynthesis.cancel();
+        speechSynthesis.resume();
+      }
+
+      // Store info about the current cue for debugging and/or logging
+      this.startTime = startTime;
+      this.endTime = endTime;
+
+      // TODO: Need to dispose of this ssu after it is finished?
+      this.ssu = new window.SpeechSynthesisUtterance();
+
+      this.ssu.text = textToSpeak;
+      this.ssu.lang = this.increaseLanguageLocalization(track.language);
+
+      // TODO: user control over these attributes
+      this.ssu.rate = 1.1;
+      this.ssu.pitch = 1.0;
+      this.ssu.volume = 1.0;
+
+      // TODO: This audio ducking needs to be made more robust
+      this.ssu.onstart = function(e) {
+        // Duck the player's audio
+        if (!this.isDucked) {
+          this.isDucked = true;
+          this.player_.tech_.volume(this.player_.tech_.volume() * audioDuckingFactor);
+        }
+      }.bind(this);
+      this.ssu.onend = function(e) {
+        // Speech synthesis of a cue has ended
+
+        const delta = (Date.now() - this.ssu.startDate) / 1000;
+
+        videojs.log(`speakDescriptionsTrackTTS of cue: ${this.startTime} : ${this.endTime} : ${this.endTime - this.startTime} : ${delta} : ${(delta * 100.0 / (this.endTime - this.startTime)).toFixed(1)}%`);
+
+        // Un-duck the player's audio
+        if (this.isDucked) {
+          this.isDucked = false;
+          this.player_.tech_.volume(this.player_.tech_.volume() / audioDuckingFactor);
+        }
+
+        if (this.extendedPlayerState_ === extendedPlayerState['playing-extended']) {
+          videojs.log('Un-pausing playback');
+          this.extendedPlayerState_ = extendedPlayerState['playing'];
+          this.player_.tech_.play();
+          this.descriptionExtended = false;
+        }
+      }.bind(this);
+      this.ssu.onerror = function(e) {
+        // An error occured during speech synthesis
+
+        const delta = (Date.now() - this.ssu.startDate) / 1000;
+
+        videojs.log.warn(`SSU error (${this.ssu.text})`);
+        videojs.log.warn(`speakDescriptionsTrackTTS of cue: ${this.startTime} : ${this.endTime} : ${this.endTime - this.startTime} : ${delta} : ${(delta * 100.0 / (this.endTime - this.startTime)).toFixed(1)}%`);
+
+        // Un-duck the player's audio
+        if (this.isDucked) {
+          this.isDucked = true;
+          this.player_.tech_.volume(this.player_.tech_.volume() / audioDuckingFactor);
+        }
+
+        if (this.extendedPlayerState_ === extendedPlayerState['playing-extended']) {
+          videojs.log('Un-pausing playback');
+          this.extendedPlayerState_ = extendedPlayerState['playing'];
+          this.player_.tech_.play();
+          this.descriptionExtended = false;
+        }
+      }.bind(this);
+
+      // Start speaking the new textToSpeak
+
+      this.ssu.startDate = Date.now();
+      speechSynthesis.speak(this.ssu);
+
+    } else {
+      // No current textToSpeak, so a cue's display time has ended.
+
+      if (speechSynthesis.speaking) {
+        // Speech synthesis is still speaking - handle description cue overrun
+        videojs.log('Pausing playback');
+
+        this.extendedPlayerState_ = extendedPlayerState['playing-extended'];
+        this.descriptionExtended = true;
+        this.player_.tech_.pause();
+
+      } else if (speechSynthesis.paused) {
+        // TODO: Handle if speech synthesis is paused here
+        videojs.log.warn(`Speech synthesis overrun (paused) (${this.ssu.text}) : ${this.startTime} : ${this.endTime}`);
+
+        speechSynthesis.cancel();
+        speechSynthesis.resume();
+
+   // } else if (this.ssu) {
+     // videojs.log(`Speech had ended before end of cue (${this.ssu.text}) : ${this.startTime} : ${this.endTime} : ${ct}`);
+
+      }
+
+      return;
+    }
+  }
+
+  /**
+   * Try to improve the localization of the text track language, using
+   *  the player's language setting and the browser's language setting.
+   *  e.g. if lang='en' and language = 'en-US', use the more specific
+   *  localization of language.
+   *
+   * @param {string} lang the lang attribute to try to improve
+   * @method increaseLanguageLocalization
+   */
+  increaseLanguageLocalization(lang) {
+    const playerLanguage = this.player_.language && this.player_.language();
+    const navigatorLanguage = window.navigator && window.navigator.language;
+
+    if (
+      lang &&
+      (typeof lang === 'string') &&
+      (typeof playerLanguage === 'string') &&
+      (playerLanguage.length > lang.length) &&
+      (playerLanguage.toLowerCase().indexOf(lang.toLowerCase()) === 0)
+    ) {
+
+      lang = playerLanguage;
+    }
+
+    if (
+      lang &&
+      (typeof lang === 'string') &&
+      (typeof navigatorLanguage === 'string') &&
+      (navigatorLanguage.length > lang.length) &&
+      (navigatorLanguage.toLowerCase().indexOf(lang.toLowerCase()) === 0)
+    ) {
+
+      lang = navigatorLanguage;
+    }
+
+    return lang;
+  }
+}
+
+const speakDescriptionsTrack = function(player) {
   let tech;
 
-  player.on('ratechange', function() {
-    tech.trigger('durationchange');
-    tech.trigger('timeupdate');
-  });
+  player.speakDescriptionsTTS = new speakDescriptionsTrackTTS(player);
+  player.on('texttrackchange', player.speakDescriptionsTTS.textTrackChange.bind(player.speakDescriptionsTTS));
+  player.on('dispose', player.speakDescriptionsTTS.dispose.bind(player.speakDescriptionsTTS));
 
   return {
     setSource(srcObj, next) {
@@ -27,39 +284,137 @@ const playbackrateAdjuster = function(player) {
 
     setTech(newTech) {
       tech = newTech;
+
+      player.off(tech, 'pause', player.handleTechPause_);
+
+      tech.on('pause', (event) => {
+        if (player.speakDescriptionsTTS && player.speakDescriptionsTTS.extendedPlayerState_) {
+          if (player.speakDescriptionsTTS.extendedPlayerState_ !== extendedPlayerState['playing-extended']){
+            player.handleTechPause_();
+          }
+        }
+      });
     },
 
+    // TODO: Eventually we may modify the duration and/or current time to allow
+    //       for the time that the video is paused for extended description.
+    //       For now, we just treat it as though the video stalled while streaming.
     duration(dur) {
-      return dur / player.playbackRate();
+      return dur;
     },
 
     currentTime(ct) {
-      return ct / player.playbackRate();
+      return ct;
     },
 
     setCurrentTime(ct) {
-      return ct * player.playbackRate();
+      return ct;
     },
 
-    buffered(bf) {
-      return createNewRanges(bf, player.playbackRate());
+    volume(vol) {
+      if (player.speakDescriptionsTTS && player.speakDescriptionsTTS.isDucked) {
+        return vol / audioDuckingFactor;
+      }
+
+      return vol;
     },
 
-    seekable(seekable) {
-      return createNewRanges(seekable, player.playbackRate());
+    setVolume(vol) {
+      if (player.speakDescriptionsTTS && player.speakDescriptionsTTS.isDucked) {
+        return vol * audioDuckingFactor;
+      }
+
+      return vol;
     },
 
-    played(played) {
-      return createNewRanges(played, player.playbackRate());
+    paused() {
+      if (player.speakDescriptionsTTS) {
+        return player.speakDescriptionsTTS.paused();
+      } else {
+        return player.paused();
+      }
+    },
+
+    callPlay() {
+      if (!player.speakDescriptionsTTS) {
+        return;
+      }
+
+      if (!player.speakDescriptionsTTS.extendedPlayerState_) {
+        player.speakDescriptionsTTS.extendedPlayerState_ = extendedPlayerState['unknown'];
+      }
+
+      switch (player.speakDescriptionsTTS.extendedPlayerState_) {
+        case extendedPlayerState['unknown']:
+        case extendedPlayerState['initialized']:
+        case extendedPlayerState['paused']:
+          player.speakDescriptionsTTS.extendedPlayerState_ = extendedPlayerState['playing'];
+          player.speakDescriptionsTTS.play();
+          return;
+          break;
+
+        case extendedPlayerState['paused-extended']:
+          if (player.speakDescriptionsTTS) {
+            player.speakDescriptionsTTS.extendedPlayerState_ = extendedPlayerState['playing-extended'];
+            player.speakDescriptionsTTS.play();
+            return videojs.middleware.TERMINATOR;
+          } else {
+            player.speakDescriptionsTTS.extendedPlayerState_ = extendedPlayerState['playing'];
+            player.speakDescriptionsTTS.play();
+            return;
+          }
+          break;
+
+        default:
+          break;
+      }
+
+      return;
+    },
+
+    callPause() {
+      if (!player.speakDescriptionsTTS) {
+        return;
+      }
+
+      if (!player.speakDescriptionsTTS.extendedPlayerState_) {
+        player.speakDescriptionsTTS.extendedPlayerState_ = extendedPlayerState['unknown'];
+      }
+
+      switch (player.speakDescriptionsTTS.extendedPlayerState_) {
+        case extendedPlayerState['unknown']:
+        case extendedPlayerState['initialized']:
+        case extendedPlayerState['playing']:
+          player.speakDescriptionsTTS.extendedPlayerState_ = extendedPlayerState['paused'];
+          player.speakDescriptionsTTS.pause();
+          return;
+          break;
+
+        case extendedPlayerState['playing-extended']:
+          if (player.speakDescriptionsTTS) {
+            player.speakDescriptionsTTS.extendedPlayerState_ = extendedPlayerState['paused-extended'];
+            player.speakDescriptionsTTS.pause();
+            return videojs.middleware.TERMINATOR;
+          } else {
+            player.speakDescriptionsTTS.extendedPlayerState_ = extendedPlayerState['paused'];
+            player.speakDescriptionsTTS.pause();
+            return;
+          }
+          break;
+
+        default:
+          break;
+      }
+
+      return;
     }
-
   };
 };
 
 // Register the plugin with video.js.
-videojs.use('*', playbackrateAdjuster);
+videojs.use('*', speakDescriptionsTrack);
 
 // Include the version number.
-playbackrateAdjuster.VERSION = '__VERSION__';
+speakDescriptionsTrack.VERSION = '__VERSION__';
 
-export default playbackrateAdjuster;
+export default speakDescriptionsTrack;

@@ -1,35 +1,39 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>videojs-playbackrate-adjuster Demo</title>
+  <title>videojs-speak-descriptions-track Demo</title>
   <link href="node_modules/video.js/dist/video-js.css" rel="stylesheet">
-  <style>
-    .video-js {
-      width: 720px;
-      height: 405px;
-    }
-  </style>
 </head>
 <body>
-  <video id="videojs-playbackrate-adjuster-player" class="video-js vjs-default-skin" controls>
-    <source src="//d2zihajmogu5jn.cloudfront.net/sintel/master.m3u8" type="application/x-mpegurl">
-    <source src="//vjs.zencdn.net/v/oceans.mp4" type="video/mp4">
-    <source src="//vjs.zencdn.net/v/oceans.webm" type="video/webm">
+  <!-- NOTE: we have to disable native Text Track support for the HTML5 tech,
+    since even HTML5 video players with native Text Track support
+    don't currently support 'description' text tracks in any
+    useful way! Currently this means that iOS will not display
+    ANY text tracks -->
+  <video id="videojs-speak-descriptions-track-player" class="video-js vjs-default-skin"
+    controls preload="none" width="640" height="360"
+    data-setup='{ "html5" : { "nativeTextTracks" : false } }'
+    poster="http://d2zihajmogu5jn.cloudfront.net/elephantsdream/poster.png">
+
+    <source src="//d2zihajmogu5jn.cloudfront.net/elephantsdream/ed_hd.mp4" type="video/mp4">
+    <source src="//d2zihajmogu5jn.cloudfront.net/elephantsdream/ed_hd.ogg" type="video/ogg">
+
+    <track kind="descriptions" src="descriptions.en.vtt" srclang="en" label="English" default>
+
+    <p class="vjs-no-js">To view this video please enable JavaScript, and consider upgrading to a web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a></p>
   </video>
+
   <ul>
     <li><a href="test/">Run unit tests in browser.</a></li>
-    
-    
   </ul>
+
   <script src="node_modules/video.js/dist/video.js"></script>
-  <script src="dist/browser/videojs-playbackrate-adjuster.js"></script>
+  <script src="dist/browser/videojs-speak-descriptions-track.js"></script>
   <script src="https://unpkg.com/videojs-contrib-hls/dist/videojs-contrib-hls.js"></script>
   <script>
     (function(window, videojs) {
-      var player = window.player = videojs('videojs-playbackrate-adjuster-player', {
-        playbackRates: [0.5, 1, 1.5, 2, 4]
-      });
+      //var player = window.player = videojs('videojs-speak-descriptions-track-player', {});
 
     }(window, window.videojs));
   </script>

@@ -17,7 +17,7 @@ QUnit.test('the environment is sane', function(assert) {
   assert.strictEqual(typeof plugin, 'function', 'plugin is a function');
 });
 
-QUnit.module('videojs-playbackrate-adjuster', {
+QUnit.module('videojs-speak-descriptions-track', {
 
   beforeEach() {
 
@@ -43,12 +43,12 @@ QUnit.test('registers itself with video.js', function(assert) {
   assert.expect(2);
 
   assert.strictEqual(
-    typeof Player.prototype.playbackrateAdjuster,
+    typeof Player.prototype.speakDescriptionsTrack,
     'function',
-    'videojs-playbackrate-adjuster plugin was registered'
+    'videojs-speak-descriptions-track plugin was registered'
   );
 
-  this.player.playbackrateAdjuster();
+  this.player.speakDescriptionsTrack();
 
   // Tick the clock forward enough to trigger the player to be "ready".
   this.clock.tick(1);

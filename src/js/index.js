@@ -8,21 +8,21 @@ import window from 'global/window';
  * @enum
  */
 const extendedPlayerState = {
-  'unknown': 'unknown',
-  'initialized': 'initialized',
-  'playing': 'playing',
-  'paused': 'paused',
-  'playing-extended': 'playing-extended',
-  'paused-extended': 'paused-extended',
+  unknown: 'unknown',
+  initialized: 'initialized',
+  playing: 'playing',
+  paused: 'paused',
+  playingExtended: 'playingExtended',
+  pausedExtended: 'pausedExtended'
 };
 
 // TODO: user control over this attribute?
 const audioDuckingFactor = 0.25;
 
 /**
- * The speakDescriptionsTrackTTS component
+ * The SpeakDescriptionsTrackTTS component
  */
-class speakDescriptionsTrackTTS {
+class SpeakDescriptionsTrackTTS {
   /**
    * Creates an instance of this class.
    *
@@ -31,7 +31,7 @@ class speakDescriptionsTrackTTS {
    */
   constructor(player) {
     this.player_ = player;
-    this.extendedPlayerState_ = extendedPlayerState['initialized'];
+    this.extendedPlayerState_ = extendedPlayerState.initialized;
     this.isDucked = false;
 
     if (window.speechSynthesis) {
@@ -40,7 +40,7 @@ class speakDescriptionsTrackTTS {
   }
 
   /**
-   * Dispose of the `speakDescriptionsTrackTTS`
+   * Dispose of the `SpeakDescriptionsTrackTTS`
    */
   dispose() {
   }
@@ -63,8 +63,8 @@ class speakDescriptionsTrackTTS {
 
   paused() {
     return (
-      this.extendedPlayerState_ === extendedPlayerState['paused'] ||
-      this.extendedPlayerState_ === extendedPlayerState['paused-extended']
+      this.extendedPlayerState_ === extendedPlayerState.paused ||
+      this.extendedPlayerState_ === extendedPlayerState.pausedExtended
     );
   }
 
@@ -162,7 +162,7 @@ class speakDescriptionsTrackTTS {
 
         const delta = (Date.now() - this.ssu.startDate) / 1000;
 
-        videojs.log(`speakDescriptionsTrackTTS of cue: ${this.startTime} : ${this.endTime} : ${this.endTime - this.startTime} : ${delta} : ${(delta * 100.0 / (this.endTime - this.startTime)).toFixed(1)}%`);
+        videojs.log(`SpeakDescriptionsTrackTTS of cue: ${this.startTime} : ${this.endTime} : ${this.endTime - this.startTime} : ${delta} : ${(delta * 100.0 / (this.endTime - this.startTime)).toFixed(1)}%`);
 
         // Un-duck the player's audio
         if (this.isDucked) {
@@ -170,9 +170,9 @@ class speakDescriptionsTrackTTS {
           this.player_.tech_.volume(this.player_.tech_.volume() / audioDuckingFactor);
         }
 
-        if (this.extendedPlayerState_ === extendedPlayerState['playing-extended']) {
+        if (this.extendedPlayerState_ === extendedPlayerState.playingExtended) {
           videojs.log('Un-pausing playback');
-          this.extendedPlayerState_ = extendedPlayerState['playing'];
+          this.extendedPlayerState_ = extendedPlayerState.playing;
           this.player_.tech_.play();
           this.descriptionExtended = false;
         }
@@ -183,7 +183,7 @@ class speakDescriptionsTrackTTS {
         const delta = (Date.now() - this.ssu.startDate) / 1000;
 
         videojs.log.warn(`SSU error (${this.ssu.text})`);
-        videojs.log.warn(`speakDescriptionsTrackTTS of cue: ${this.startTime} : ${this.endTime} : ${this.endTime - this.startTime} : ${delta} : ${(delta * 100.0 / (this.endTime - this.startTime)).toFixed(1)}%`);
+        videojs.log.warn(`SpeakDescriptionsTrackTTS of cue: ${this.startTime} : ${this.endTime} : ${this.endTime - this.startTime} : ${delta} : ${(delta * 100.0 / (this.endTime - this.startTime)).toFixed(1)}%`);
 
         // Un-duck the player's audio
         if (this.isDucked) {
@@ -191,9 +191,9 @@ class speakDescriptionsTrackTTS {
           this.player_.tech_.volume(this.player_.tech_.volume() / audioDuckingFactor);
         }
 
-        if (this.extendedPlayerState_ === extendedPlayerState['playing-extended']) {
+        if (this.extendedPlayerState_ === extendedPlayerState.playingExtended) {
           videojs.log('Un-pausing playback');
-          this.extendedPlayerState_ = extendedPlayerState['playing'];
+          this.extendedPlayerState_ = extendedPlayerState.playing;
           this.player_.tech_.play();
           this.descriptionExtended = false;
         }
@@ -211,7 +211,7 @@ class speakDescriptionsTrackTTS {
         // Speech synthesis is still speaking - handle description cue overrun
         videojs.log('Pausing playback');
 
-        this.extendedPlayerState_ = extendedPlayerState['playing-extended'];
+        this.extendedPlayerState_ = extendedPlayerState.playingExtended;
         this.descriptionExtended = true;
         this.player_.tech_.pause();
 
@@ -238,6 +238,7 @@ class speakDescriptionsTrackTTS {
    *  localization of language.
    *
    * @param {string} lang the lang attribute to try to improve
+   * @return {string} the improved lang attribute
    * @method increaseLanguageLocalization
    */
   increaseLanguageLocalization(lang) {
@@ -273,7 +274,7 @@ class speakDescriptionsTrackTTS {
 const speakDescriptionsTrack = function(player) {
   let tech;
 
-  player.speakDescriptionsTTS = new speakDescriptionsTrackTTS(player);
+  player.speakDescriptionsTTS = new SpeakDescriptionsTrackTTS(player);
   player.on('texttrackchange', player.speakDescriptionsTTS.textTrackChange.bind(player.speakDescriptionsTTS));
   player.on('dispose', player.speakDescriptionsTTS.dispose.bind(player.speakDescriptionsTTS));
 
@@ -289,7 +290,7 @@ const speakDescriptionsTrack = function(player) {
 
       tech.on('pause', (event) => {
         if (player.speakDescriptionsTTS && player.speakDescriptionsTTS.extendedPlayerState_) {
-          if (player.speakDescriptionsTTS.extendedPlayerState_ !== extendedPlayerState['playing-extended']){
+          if (player.speakDescriptionsTTS.extendedPlayerState_ !== extendedPlayerState.playingExtended) {
             player.handleTechPause_();
           }
         }
@@ -330,8 +331,6 @@ const speakDescriptionsTrack = function(player) {
     paused() {
       if (player.speakDescriptionsTTS) {
         return player.speakDescriptionsTTS.paused();
-      } else {
-        return player.paused();
       }
     },
 
@@ -341,32 +340,21 @@ const speakDescriptionsTrack = function(player) {
       }
 
       if (!player.speakDescriptionsTTS.extendedPlayerState_) {
-        player.speakDescriptionsTTS.extendedPlayerState_ = extendedPlayerState['unknown'];
+        player.speakDescriptionsTTS.extendedPlayerState_ = extendedPlayerState.unknown;
       }
 
       switch (player.speakDescriptionsTTS.extendedPlayerState_) {
-        case extendedPlayerState['unknown']:
-        case extendedPlayerState['initialized']:
-        case extendedPlayerState['paused']:
-          player.speakDescriptionsTTS.extendedPlayerState_ = extendedPlayerState['playing'];
-          player.speakDescriptionsTTS.play();
-          return;
-          break;
+      case extendedPlayerState.unknown:
+      case extendedPlayerState.initialized:
+      case extendedPlayerState.paused:
+        player.speakDescriptionsTTS.extendedPlayerState_ = extendedPlayerState.playing;
+        player.speakDescriptionsTTS.play();
+        return;
 
-        case extendedPlayerState['paused-extended']:
-          if (player.speakDescriptionsTTS) {
-            player.speakDescriptionsTTS.extendedPlayerState_ = extendedPlayerState['playing-extended'];
-            player.speakDescriptionsTTS.play();
-            return videojs.middleware.TERMINATOR;
-          } else {
-            player.speakDescriptionsTTS.extendedPlayerState_ = extendedPlayerState['playing'];
-            player.speakDescriptionsTTS.play();
-            return;
-          }
-          break;
-
-        default:
-          break;
+      case extendedPlayerState.pausedExtended:
+        player.speakDescriptionsTTS.extendedPlayerState_ = extendedPlayerState.playingExtended;
+        player.speakDescriptionsTTS.play();
+        return videojs.middleware.TERMINATOR;
       }
 
       return;
@@ -378,32 +366,21 @@ const speakDescriptionsTrack = function(player) {
       }
 
       if (!player.speakDescriptionsTTS.extendedPlayerState_) {
-        player.speakDescriptionsTTS.extendedPlayerState_ = extendedPlayerState['unknown'];
+        player.speakDescriptionsTTS.extendedPlayerState_ = extendedPlayerState.unknown;
       }
 
       switch (player.speakDescriptionsTTS.extendedPlayerState_) {
-        case extendedPlayerState['unknown']:
-        case extendedPlayerState['initialized']:
-        case extendedPlayerState['playing']:
-          player.speakDescriptionsTTS.extendedPlayerState_ = extendedPlayerState['paused'];
-          player.speakDescriptionsTTS.pause();
-          return;
-          break;
+      case extendedPlayerState.unknown:
+      case extendedPlayerState.initialized:
+      case extendedPlayerState.playing:
+        player.speakDescriptionsTTS.extendedPlayerState_ = extendedPlayerState.paused;
+        player.speakDescriptionsTTS.pause();
+        return;
 
-        case extendedPlayerState['playing-extended']:
-          if (player.speakDescriptionsTTS) {
-            player.speakDescriptionsTTS.extendedPlayerState_ = extendedPlayerState['paused-extended'];
-            player.speakDescriptionsTTS.pause();
-            return videojs.middleware.TERMINATOR;
-          } else {
-            player.speakDescriptionsTTS.extendedPlayerState_ = extendedPlayerState['paused'];
-            player.speakDescriptionsTTS.pause();
-            return;
-          }
-          break;
-
-        default:
-          break;
+      case extendedPlayerState.playingExtended:
+        player.speakDescriptionsTTS.extendedPlayerState_ = extendedPlayerState.pausedExtended;
+        player.speakDescriptionsTTS.pause();
+        return videojs.middleware.TERMINATOR;
       }
 
       return;

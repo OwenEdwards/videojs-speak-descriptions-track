@@ -4,6 +4,8 @@ A Video.js 7 middleware that uses browser speech synthesis to speak descriptions
 
 If a text track with kind="descriptions" has mode="showing" in the player, then use speech synthesis (also known as "text to speech" or TTS) to announce each text cue when it is displayed. If it takes longer to announce the cue than its display time, then pause the tech until the speech synthesis finishes. Use a [middleware] layer to allow the tech to be paused without the player appearing to be paused, and to support pausing of the player either while both the tech and speech synthesis are playing, or while the tech is paused and the speech synthesis is still speaking.
 
+Important Disclaimer: this plugin is not intended to be used to specifically address any accessibility requirements (e.g. WCAG 2.0 Success Criteria 1.2.3, 1.2.5, and 1.2.7). It is an experimental implementation of TTS for text video description. Users of this plugin should not assume that any level of accessibility support is provided by the features of this plugin.
+
 ## Installation
 
 ```sh

@@ -2,7 +2,7 @@
 
 A Video.js 7 middleware that uses browser speech synthesis to speak descriptions contained in a description text track
 
-If a text track with kind="descriptions" has mode="showing" in the player, then use speech synthesis (also known as "text to speech" or TTS) to announce each text cue when it is displayed. If it takes longer to announce the cue than its display time, then pause the tech until the speech synthesis finishes. Use a [middleware][middleware] layer to allow the tech to be paused without the player appearing to be paused, and to support pausing of the player either while both the tech and speech synthesis are playing, or while the tech is paused and the speech synthesis is still speaking.
+If a text track with kind="descriptions" has mode="showing" in the player, then use speech synthesis (also known as "text to speech" or TTS) to announce each text cue when it is displayed. If it takes longer to announce the cue than its display time, then pause the tech until the speech synthesis finishes. Use a [middleware] layer to allow the tech to be paused without the player appearing to be paused, and to support pausing of the player either while both the tech and speech synthesis are playing, or while the tech is paused and the speech synthesis is still speaking.
 
 ## Installation
 

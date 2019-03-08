@@ -6,6 +6,13 @@
   <link href="https://unpkg.com/video.js/dist/video-js.css" rel="stylesheet">
 </head>
 <body>
+
+  <h1>videojs-speak-descriptions-track Demo</h1>
+
+  <p>A Video.js 7 middleware that uses browser speech synthesis to speak descriptions contained in a description text track</p>
+
+  <p>If the description (AD) text track is enabled, then browser speech synthesis (also known as "text to speech" or TTS) is used to announce each text cue when it is displayed (if the browser supports speech synthesis). If it takes longer to announce the cue than its display time, then pause the video playback until the speech synthesis finishes (known as 'extended description').</p>
+
   <!-- NOTE: we have to disable native Text Track support for the HTML5 tech,
     since even HTML5 video players with native Text Track support
     don't currently support 'description' text tracks in any
@@ -14,7 +21,7 @@
   <video id="videojs-speak-descriptions-track-player" class="video-js vjs-default-skin"
     controls preload="none" width="640" height="360"
     data-setup='{ "html5" : { "nativeTextTracks" : false } }'
-    poster="http://d2zihajmogu5jn.cloudfront.net/elephantsdream/poster.png">
+    poster="https://d2zihajmogu5jn.cloudfront.net/elephantsdream/poster.png">
 
     <source src="//d2zihajmogu5jn.cloudfront.net/elephantsdream/ed_hd.mp4" type="video/mp4">
     <source src="//d2zihajmogu5jn.cloudfront.net/elephantsdream/ed_hd.ogg" type="video/ogg">
@@ -23,10 +30,6 @@
 
     <p class="vjs-no-js">To view this video please enable JavaScript, and consider upgrading to a web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a></p>
   </video>
-
-  <ul>
-    <li><a href="test/">Run unit tests in browser.</a></li>
-  </ul>
 
   <script src="https://unpkg.com/video.js/dist/video.js"></script>
   <script src="dist/browser/videojs-speak-descriptions-track.js"></script>

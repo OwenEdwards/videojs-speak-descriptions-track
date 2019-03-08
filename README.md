@@ -56,6 +56,8 @@ require(['video.js', 'videojs-speak-descriptions-track'], function(videojs) {
 
 MIT. Copyright (c) Owen Edwards <owen.r.edwards@gmail.com>
 
+This video.js plugin is heavily based on https://github.com/videojs/videojs-playbackrate-adjuster, copyright (c) Gary Katsevman <me@gkatsev.com>
+
 
 [videojs]: http://videojs.com/
 [middleware] https://docs.videojs.com/tutorial-middleware.html

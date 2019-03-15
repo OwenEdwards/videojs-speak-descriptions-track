@@ -36,6 +36,19 @@ class SpeakDescriptionsTrackTTS {
 
     if (window.speechSynthesis) {
       window.speechSynthesis.cancel();
+
+      // Stop the textTrackDisplay component's element from having
+      //  aria-live="assertive".
+      let textTrackDisplay = player.getChild('textTrackDisplay');
+      if (textTrackDisplay && textTrackDisplay.updateForTrack) {
+        textTrackDisplay.originalUpdateForTrack = textTrackDisplay.updateForTrack;
+        textTrackDisplay.updateForTrack = function(track) {
+          if (this.getAttribute('aria-live') !== 'off') {
+            this.setAttribute('aria-live', 'off');
+          }
+          this.originalUpdateForTrack(track);
+        }.bind(textTrackDisplay);
+      }
     }
   }
 
@@ -354,6 +367,7 @@ const speakDescriptionsTrack = function(player) {
       case extendedPlayerState.pausedExtended:
         player.speakDescriptionsTTS.extendedPlayerState_ = extendedPlayerState.playingExtended;
         player.speakDescriptionsTTS.play();
+        player.handleTechPlay_();
         return videojs.middleware.TERMINATOR;
       }
 
@@ -380,6 +394,7 @@ const speakDescriptionsTrack = function(player) {
       case extendedPlayerState.playingExtended:
         player.speakDescriptionsTTS.extendedPlayerState_ = extendedPlayerState.pausedExtended;
         player.speakDescriptionsTTS.pause();
+        player.handleTechPause_();
         return videojs.middleware.TERMINATOR;
       }
 

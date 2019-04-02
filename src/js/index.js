@@ -167,7 +167,7 @@ class SpeakDescriptionsTrackTTS {
         // Duck the player's audio
         if (!this.isDucked) {
           this.isDucked = true;
-          this.player_.tech_.volume(this.player_.tech_.volume() * audioDuckingFactor);
+          this.player_.tech_.setVolume(this.player_.tech_.volume() * audioDuckingFactor);
         }
       }.bind(this);
       this.ssu.onend = function(e) {
@@ -180,7 +180,7 @@ class SpeakDescriptionsTrackTTS {
         // Un-duck the player's audio
         if (this.isDucked) {
           this.isDucked = false;
-          this.player_.tech_.volume(this.player_.tech_.volume() / audioDuckingFactor);
+          this.player_.tech_.setVolume(this.player_.tech_.volume() / audioDuckingFactor);
         }
 
         if (this.extendedPlayerState_ === extendedPlayerState.playingExtended) {
@@ -201,7 +201,7 @@ class SpeakDescriptionsTrackTTS {
         // Un-duck the player's audio
         if (this.isDucked) {
           this.isDucked = true;
-          this.player_.tech_.volume(this.player_.tech_.volume() / audioDuckingFactor);
+          this.player_.tech_.setVolume(this.player_.tech_.volume() / audioDuckingFactor);
         }
 
         if (this.extendedPlayerState_ === extendedPlayerState.playingExtended) {

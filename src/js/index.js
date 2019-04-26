@@ -167,6 +167,7 @@ class SpeakDescriptionsTrackTTS {
         // Duck the player's audio
         if (!this.isDucked) {
           this.isDucked = true;
+          this.player_.addClass('vjs-audio-ducked');
           this.player_.tech_.setVolume(this.player_.tech_.volume() * audioDuckingFactor);
         }
       }.bind(this);
@@ -180,6 +181,7 @@ class SpeakDescriptionsTrackTTS {
         // Un-duck the player's audio
         if (this.isDucked) {
           this.isDucked = false;
+          this.player_.removeClass('vjs-audio-ducked');
           this.player_.tech_.setVolume(this.player_.tech_.volume() / audioDuckingFactor);
         }
 
@@ -200,7 +202,8 @@ class SpeakDescriptionsTrackTTS {
 
         // Un-duck the player's audio
         if (this.isDucked) {
-          this.isDucked = true;
+          this.isDucked = false;
+          this.player_.removeClass('vjs-audio-ducked');
           this.player_.tech_.setVolume(this.player_.tech_.volume() / audioDuckingFactor);
         }
 

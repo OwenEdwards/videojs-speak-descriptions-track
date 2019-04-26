@@ -2,17 +2,33 @@
   "name": "videojs-speak-descriptions-track",
   "version": "1.2.0",
   "description": "A Video.js 7 middleware that uses browser speech synthesis to speak descriptions contained in a description text track",
-  "main": "dist/es5/index.js",
-  "module": "src/js/index.js",
+  "main": "dist/videojs-speak-descriptions-track.cjs.js",
+  "module": "dist/videojs-speak-descriptions-track.es.js",
   "scripts": {
-    "build": "sb-build",
-    "clean": "sb-clean",
-    "lint": "sb-lint",
-    "start": "sb-start",
-    "test": "sb-test",
-    "watch": "sb-watch",
-    "prepublish": "npm run build",
-    "postversion": "sb-release"
+    "prebuild": "npm run clean",
+    "build": "npm-run-all -p build:*",
+    "build:css": "postcss -o dist/videojs-speak-descriptions-track.css --config scripts/postcss.config.js src/plugin.css",
+    "build:js": "rollup -c scripts/rollup.config.js",
+    "clean": "shx rm -rf ./dist ./test/dist",
+    "postclean": "shx mkdir -p ./dist ./test/dist",
+    "docs": "npm-run-all docs:*",
+    "docs:api": "jsdoc src -g plugins/markdown -r -d docs/api",
+    "docs:toc": "doctoc --notitle README.md",
+    "lint": "vjsstandard",
+    "server": "karma start scripts/karma.conf.js --singleRun=false --auto-watch",
+    "start": "npm-run-all -p server watch",
+    "pretest": "npm-run-all lint build",
+    "test": "npm-run-all test:*",
+    "posttest": "shx cat test/dist/coverage/text.txt",
+    "test:unit": "karma start scripts/karma.conf.js",
+    "test:verify": "vjsverify --verbose",
+    "update-changelog": "conventional-changelog -p videojs -i CHANGELOG.md -s",
+    "preversion": "npm test",
+    "version": "is-prerelease || npm run update-changelog && git add CHANGELOG.md",
+    "watch": "npm-run-all -p watch:*",
+    "watch:css": "npm run build:css -- -w",
+    "watch:js": "npm run build:js -- -w",
+    "prepublishOnly": "npm-run-all build test:verify"
   },
   "keywords": [
     "videojs",
@@ -23,10 +39,11 @@
   "license": "MIT",
   "jsnext:main": "src/js/index.js",
   "engines": {
-    "node": ">=4.4.0"
+    "node": ">=8",
+    "npm": ">=5"
   },
   "generator-videojs-plugin": {
-    "version": "3.1.1"
+    "version": "7.6.3"
   },
   "browserify-shim": "node_modules/videojs-spellbook/config/shim.config.js",
   "spellbook": {
@@ -35,23 +52,30 @@
     "docs": false
   },
   "files": [
-    "CHANGELOG.md",
     "CONTRIBUTING.md",
-    "README.md",
-    "dist/browser",
-    "dist/docs",
-    "dist/es5",
-    "dist/lang",
+    "dist/",
     "docs/",
     "index.html",
-    "src/"
+    "scripts/",
+    "src/",
+    "test/"
   ],
   "dependencies": {
-    "global": "4.3.2",
-    "video.js": "^7"
+    "global": "^4.3.2",
+    "video.js": "^6 || ^7"
   },
   "devDependencies": {
-    "videojs-spellbook": "^2.0.2"
+    "@videojs/generator-helpers": "~1.0.0",
+    "jsdoc": "BrandonOCasey/jsdoc#feat/plugin-from-cli",
+    "karma": "^4.0.0",
+    "postcss-cli": "^6.0.0",
+    "rollup": "^1.10.0",
+    "sinon": "^7.2.2",
+    "videojs-generate-karma-config": "~5.2.0",
+    "videojs-generate-postcss-config": "~2.1.0",
+    "videojs-generate-rollup-config": "~3.1.0",
+    "videojs-generator-verify": "~1.2.0",
+    "videojs-standard": "^8.0.3"
   },
   "directories": {
     "test": "test"
@@ -63,5 +87,31 @@
   "bugs": {
     "url": "https://github.com/OwenEdwards/videojs-speak-descriptions-track/issues"
   },
-  "homepage": "https://github.com/OwenEdwards/videojs-speak-descriptions-track#readme"
+  "homepage": "https://github.com/OwenEdwards/videojs-speak-descriptions-track#readme",
+  "browserslist": [
+    "defaults",
+    "ie 11"
+  ],
+  "vjsstandard": {
+    "ignore": [
+      "dist",
+      "docs",
+      "test/dist"
+    ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.js": [
+      "vjsstandard --fix",
+      "git add"
+    ],
+    "README.md": [
+      "doctoc --notitle",
+      "git add"
+    ]
+  }
 }

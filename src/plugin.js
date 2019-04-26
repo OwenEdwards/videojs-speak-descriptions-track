@@ -39,7 +39,8 @@ class SpeakDescriptionsTrackTTS {
 
       // Stop the textTrackDisplay component's element from having
       //  aria-live="assertive".
-      let textTrackDisplay = player.getChild('textTrackDisplay');
+      const textTrackDisplay = player.getChild('textTrackDisplay');
+
       if (textTrackDisplay && textTrackDisplay.updateForTrack) {
         textTrackDisplay.originalUpdateForTrack = textTrackDisplay.updateForTrack;
         textTrackDisplay.updateForTrack = function(track) {
@@ -238,8 +239,8 @@ class SpeakDescriptionsTrackTTS {
         speechSynthesis.cancel();
         speechSynthesis.resume();
 
-   // } else if (this.ssu) {
-     // videojs.log(`Speech had ended before end of cue (${this.ssu.text}) : ${this.startTime} : ${this.endTime} : ${ct}`);
+        // } else if (this.ssu) {
+        // videojs.log(`Speech had ended before end of cue (${this.ssu.text}) : ${this.startTime} : ${this.endTime} : ${ct}`);
 
       }
 

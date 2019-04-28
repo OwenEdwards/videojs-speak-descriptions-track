@@ -1,4 +1,5 @@
 import videojs from 'video.js';
+import {version as VERSION} from '../package.json';
 import window from 'global/window';
 
 /**
@@ -407,10 +408,10 @@ const speakDescriptionsTrack = function(player) {
   };
 };
 
+// Include the version number.
+speakDescriptionsTrack.VERSION = VERSION;
+
 // Register the plugin with video.js.
 videojs.use('*', speakDescriptionsTrack);
-
-// Include the version number.
-speakDescriptionsTrack.VERSION = '__VERSION__';
 
 export default speakDescriptionsTrack;

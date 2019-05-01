@@ -1,4 +1,5 @@
 import videojs from 'video.js';
+import {version as VERSION} from '../package.json';
 import window from 'global/window';
 
 /**
@@ -39,7 +40,8 @@ class SpeakDescriptionsTrackTTS {
 
       // Stop the textTrackDisplay component's element from having
       //  aria-live="assertive".
-      let textTrackDisplay = player.getChild('textTrackDisplay');
+      const textTrackDisplay = player.getChild('textTrackDisplay');
+
       if (textTrackDisplay && textTrackDisplay.updateForTrack) {
         textTrackDisplay.originalUpdateForTrack = textTrackDisplay.updateForTrack;
         textTrackDisplay.updateForTrack = function(track) {
@@ -167,6 +169,7 @@ class SpeakDescriptionsTrackTTS {
         // Duck the player's audio
         if (!this.isDucked) {
           this.isDucked = true;
+          this.player_.addClass('vjs-audio-ducked');
           this.player_.tech_.setVolume(this.player_.tech_.volume() * audioDuckingFactor);
         }
       }.bind(this);
@@ -180,6 +183,7 @@ class SpeakDescriptionsTrackTTS {
         // Un-duck the player's audio
         if (this.isDucked) {
           this.isDucked = false;
+          this.player_.removeClass('vjs-audio-ducked');
           this.player_.tech_.setVolume(this.player_.tech_.volume() / audioDuckingFactor);
         }
 
@@ -200,7 +204,8 @@ class SpeakDescriptionsTrackTTS {
 
         // Un-duck the player's audio
         if (this.isDucked) {
-          this.isDucked = true;
+          this.isDucked = false;
+          this.player_.removeClass('vjs-audio-ducked');
           this.player_.tech_.setVolume(this.player_.tech_.volume() / audioDuckingFactor);
         }
 
@@ -235,8 +240,8 @@ class SpeakDescriptionsTrackTTS {
         speechSynthesis.cancel();
         speechSynthesis.resume();
 
-   // } else if (this.ssu) {
-     // videojs.log(`Speech had ended before end of cue (${this.ssu.text}) : ${this.startTime} : ${this.endTime} : ${ct}`);
+        // } else if (this.ssu) {
+        // videojs.log(`Speech had ended before end of cue (${this.ssu.text}) : ${this.startTime} : ${this.endTime} : ${ct}`);
 
       }
 
@@ -403,10 +408,10 @@ const speakDescriptionsTrack = function(player) {
   };
 };
 
+// Include the version number.
+speakDescriptionsTrack.VERSION = VERSION;
+
 // Register the plugin with video.js.
 videojs.use('*', speakDescriptionsTrack);
-
-// Include the version number.
-speakDescriptionsTrack.VERSION = '__VERSION__';
 
 export default speakDescriptionsTrack;

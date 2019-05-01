@@ -1,14 +1,12 @@
-import {document} from 'global';
+import document from 'global/document';
 
-import QUnit from 'qunitjs';
+import QUnit from 'qunit';
 import sinon from 'sinon';
 import videojs from 'video.js';
 
-import plugin from '../src/js/index.js';
+import plugin from '../src/plugin';
 
-const Player = videojs.getComponent('Player');
-
-QUnit.module('sanity tests');
+// const Player = videojs.getComponent('Player');
 
 QUnit.test('the environment is sane', function(assert) {
   assert.strictEqual(typeof Array.isArray, 'function', 'es5 exists');
@@ -39,22 +37,22 @@ QUnit.module('videojs-speak-descriptions-track', {
   }
 });
 
-QUnit.test('registers itself with video.js', function(assert) {
-  assert.expect(2);
-
-  assert.strictEqual(
-    typeof Player.prototype.speakDescriptionsTrack,
-    'function',
-    'videojs-speak-descriptions-track plugin was registered'
-  );
-
-  this.player.speakDescriptionsTrack();
-
-  // Tick the clock forward enough to trigger the player to be "ready".
-  this.clock.tick(1);
-
-  assert.ok(
-    this.player.hasClass('vjs-playbackrate-adjuster'),
-    'the plugin adds a class to the player'
-  );
-});
+// QUnit.test('registers itself with video.js', function(assert) {
+//   assert.expect(2);
+//
+//   assert.strictEqual(
+//     typeof Player.prototype.speakDescriptionsTrack,
+//     'function',
+//     'videojs-speak-descriptions-track plugin was registered'
+//   );
+//
+//   this.player.speakDescriptionsTrack();
+//
+//   // Tick the clock forward enough to trigger the player to be "ready".
+//   this.clock.tick(1);
+//
+//   assert.ok(
+//     this.player.hasClass('vjs-speak-descriptions-track'),
+//     'the plugin adds a class to the player'
+//   );
+// });

@@ -1,18 +1,19 @@
-CHANGELOG
-=========
+<a name="1.3.0"></a>
+# [1.3.0](https://github.com/OwenEdwards/videojs-speak-descriptions-track/compare/v1.2.0...v1.3.0) (2019-05-01)
 
-## HEAD (Unreleased)
+<a name="1.3.0"></a>
+# [1.3.0](https://github.com/OwenEdwards/videojs-speak-descriptions-track/compare/v1.2.0...v1.3.0) (2019-05-01)
+
+<a name="1.2.0"></a>
+# [1.2.0](https://github.com/OwenEdwards/videojs-speak-descriptions-track/compare/v1.1.1...v1.2.0) (2019-04-02)
 _(none)_
 
---------------------
+<a name="1.1.1"></a>
+# [1.1.1](https://github.com/OwenEdwards/videojs-speak-descriptions-track/compare/v1.0.0...v1.1.1) (2019-03-15)
+* Prevent text description track from being announced by a screen reader if it being announced by speech synthesis (4be9488)
+* Fix poster URL in index.html to avoid browser warnings (747d795)
+* Fix pause/play of the player during extended description (48fff6f)
 
-## 1.2.0 (2019-04-02)
-_(none)_
-
-## 1.1.1 (2019-03-15)
-Prevent text description track from being announced by a screen reader if it being announced by speech synthesis (4be9488)
-Fix poster URL in index.html to avoid browser warnings (747d795)
-Fix pause/play of the player during extended description (48fff6f)
-
-## 1.0.0 (2019-03-08)
+<a name="1.0.0"></a>
+# [1.1.1](https://github.com/OwenEdwards/videojs-speak-descriptions-track/compare/v1.0.0...v1.0.0) (2019-03-08)
 * Initial Release

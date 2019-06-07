@@ -160,9 +160,9 @@ class SpeakDescriptionsTrackTTS {
       this.ssu.lang = this.increaseLanguageLocalization(track.language);
 
       // TODO: user control over these attributes
-      this.ssu.rate = 1.1;
+      this.ssu.rate = this.player_.playbackRate() * 1.1;
       this.ssu.pitch = 1.0;
-      this.ssu.volume = 1.0;
+      this.ssu.volume = this.player_.volume();
 
       // TODO: This audio ducking needs to be made more robust
       this.ssu.onstart = this.duck.bind(this);

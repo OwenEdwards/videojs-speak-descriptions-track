@@ -165,14 +165,7 @@ class SpeakDescriptionsTrackTTS {
       this.ssu.volume = 1.0;
 
       // TODO: This audio ducking needs to be made more robust
-      this.ssu.onstart = function(e) {
-        // Duck the player's audio
-        if (!this.isDucked) {
-          this.isDucked = true;
-          this.player_.addClass('vjs-audio-ducked');
-          this.player_.tech_.setVolume(this.player_.tech_.volume() * audioDuckingFactor);
-        }
-      }.bind(this);
+      this.ssu.onstart = this.duck.bind(this);
       this.ssu.onend = function(e) {
         // Speech synthesis of a cue has ended
 
@@ -270,13 +263,25 @@ class SpeakDescriptionsTrackTTS {
     log(`SpeakDescriptionsTrackTTS of cue: ${this.startTime} : ${this.endTime} : ${this.endTime - this.startTime} : ${delta} : ${(delta * 100.0 / (this.endTime - this.startTime)).toFixed(1)}%`);
   }
 
-  utteranceFinished() {
+  duck() {
+    if (!this.isDucked) {
+      this.isDucked = true;
+      this.player_.addClass('vjs-audio-ducked');
+      this.player_.tech_.setVolume(this.player_.tech_.volume() * audioDuckingFactor);
+    }
+  }
+
+  unduck() {
     // Un-duck the player's audio
     if (this.isDucked) {
       this.isDucked = false;
       this.player_.removeClass('vjs-audio-ducked');
       this.player_.tech_.setVolume(this.player_.tech_.volume() / audioDuckingFactor);
     }
+  }
+
+  utteranceFinished() {
+    this.unduck();
 
     if (this.extendedPlayerState_ === extendedPlayerState.playingExtended) {
       videojs.log('Un-pausing playback');

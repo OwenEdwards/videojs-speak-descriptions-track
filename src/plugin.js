@@ -178,7 +178,7 @@ class SpeakDescriptionsTrackTTS {
 
         const delta = (Date.now() - this.ssu.startDate) / 1000;
 
-        videojs.log(`SpeakDescriptionsTrackTTS of cue: ${this.startTime} : ${this.endTime} : ${this.endTime - this.startTime} : ${delta} : ${(delta * 100.0 / (this.endTime - this.startTime)).toFixed(1)}%`);
+        this.log({delta});
 
         this.utteranceFinished();
       }.bind(this);
@@ -188,7 +188,7 @@ class SpeakDescriptionsTrackTTS {
         const delta = (Date.now() - this.ssu.startDate) / 1000;
 
         videojs.log.warn(`SSU error (${this.ssu.text})`);
-        videojs.log.warn(`SpeakDescriptionsTrackTTS of cue: ${this.startTime} : ${this.endTime} : ${this.endTime - this.startTime} : ${delta} : ${(delta * 100.0 / (this.endTime - this.startTime)).toFixed(1)}%`);
+        this.log({delta, warn: true});
 
         this.utteranceFinished();
       }.bind(this);
@@ -262,6 +262,12 @@ class SpeakDescriptionsTrackTTS {
     }
 
     return lang;
+  }
+
+  log({delta, warn = false}) {
+    const log = warn ? videojs.log.warn : videojs.log;
+
+    log(`SpeakDescriptionsTrackTTS of cue: ${this.startTime} : ${this.endTime} : ${this.endTime - this.startTime} : ${delta} : ${(delta * 100.0 / (this.endTime - this.startTime)).toFixed(1)}%`);
   }
 
   utteranceFinished() {

@@ -180,19 +180,7 @@ class SpeakDescriptionsTrackTTS {
 
         videojs.log(`SpeakDescriptionsTrackTTS of cue: ${this.startTime} : ${this.endTime} : ${this.endTime - this.startTime} : ${delta} : ${(delta * 100.0 / (this.endTime - this.startTime)).toFixed(1)}%`);
 
-        // Un-duck the player's audio
-        if (this.isDucked) {
-          this.isDucked = false;
-          this.player_.removeClass('vjs-audio-ducked');
-          this.player_.tech_.setVolume(this.player_.tech_.volume() / audioDuckingFactor);
-        }
-
-        if (this.extendedPlayerState_ === extendedPlayerState.playingExtended) {
-          videojs.log('Un-pausing playback');
-          this.extendedPlayerState_ = extendedPlayerState.playing;
-          this.player_.tech_.play();
-          this.descriptionExtended = false;
-        }
+        this.utteranceFinished();
       }.bind(this);
       this.ssu.onerror = function(e) {
         // An error occured during speech synthesis
@@ -202,19 +190,7 @@ class SpeakDescriptionsTrackTTS {
         videojs.log.warn(`SSU error (${this.ssu.text})`);
         videojs.log.warn(`SpeakDescriptionsTrackTTS of cue: ${this.startTime} : ${this.endTime} : ${this.endTime - this.startTime} : ${delta} : ${(delta * 100.0 / (this.endTime - this.startTime)).toFixed(1)}%`);
 
-        // Un-duck the player's audio
-        if (this.isDucked) {
-          this.isDucked = false;
-          this.player_.removeClass('vjs-audio-ducked');
-          this.player_.tech_.setVolume(this.player_.tech_.volume() / audioDuckingFactor);
-        }
-
-        if (this.extendedPlayerState_ === extendedPlayerState.playingExtended) {
-          videojs.log('Un-pausing playback');
-          this.extendedPlayerState_ = extendedPlayerState.playing;
-          this.player_.tech_.play();
-          this.descriptionExtended = false;
-        }
+        this.utteranceFinished();
       }.bind(this);
 
       // Start speaking the new textToSpeak
@@ -286,6 +262,22 @@ class SpeakDescriptionsTrackTTS {
     }
 
     return lang;
+  }
+
+  utteranceFinished() {
+    // Un-duck the player's audio
+    if (this.isDucked) {
+      this.isDucked = false;
+      this.player_.removeClass('vjs-audio-ducked');
+      this.player_.tech_.setVolume(this.player_.tech_.volume() / audioDuckingFactor);
+    }
+
+    if (this.extendedPlayerState_ === extendedPlayerState.playingExtended) {
+      videojs.log('Un-pausing playback');
+      this.extendedPlayerState_ = extendedPlayerState.playing;
+      this.player_.tech_.play();
+      this.descriptionExtended = false;
+    }
   }
 }
 

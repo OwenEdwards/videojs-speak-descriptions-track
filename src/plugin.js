@@ -55,15 +55,19 @@ class SpeakDescriptionsTrackTTS {
   }
 
   voice(voice) {
-    if (!voice && this.voice_) {
+    if (voice === undefined && this.voice_) {
       return this.voice_;
-    } else if (!voice) {
+    } else if (Object.prototype.toString.call(voice) !== '[object SpeechSynthesisVoice]') {
+      // reset to default voice;
+      this.voice_ = null;
+
       const lang = this.ssu && this.ssu.lang || this.increaseLanguageLocalization(this.player_.language());
 
       return window.speechSynthesis.getVoices().filter(v => v.lang.startsWith(lang))[0];
     }
 
     this.voice_ = voice;
+    return this.voice_;
   }
 
   /**

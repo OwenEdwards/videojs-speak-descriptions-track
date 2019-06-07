@@ -36,7 +36,11 @@ class SpeakDescriptionsTrackTTS {
     this.isDucked = false;
 
     if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
+      // workaround for chrome bug
+      window.addEventListener('unload', () => {
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.resume();
+      });
 
       // Stop the textTrackDisplay component's element from having
       //  aria-live="assertive".
@@ -79,9 +83,9 @@ class SpeakDescriptionsTrackTTS {
   play() {
     const speechSynthesis = window.speechSynthesis;
 
-    if (speechSynthesis.paused) {
-      speechSynthesis.resume();
-    }
+    // if (speechSynthesis.paused) {
+    speechSynthesis.resume();
+    // }
   }
 
   pause() {

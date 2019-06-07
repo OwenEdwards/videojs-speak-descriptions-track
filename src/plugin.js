@@ -55,8 +55,12 @@ class SpeakDescriptionsTrackTTS {
   }
 
   voice(voice) {
-    if (!voice) {
+    if (!voice && this.voice_) {
       return this.voice_;
+    } else if (!voice) {
+      const lang = this.ssu && this.ssu.lang || this.increaseLanguageLocalization(this.player_.language());
+
+      return window.speechSynthesis.getVoices().filter(v => v.lang.startsWith(lang))[0];
     }
 
     this.voice_ = voice;
@@ -167,7 +171,8 @@ class SpeakDescriptionsTrackTTS {
       this.ssu.text = textToSpeak;
       this.ssu.lang = this.increaseLanguageLocalization(track.language);
 
-      this.ssu.voice = this.voice_;
+      // get default voice for language or the user set voice
+      this.ssu.voice = this.voice();
 
       // TODO: user control over these attributes
       this.ssu.rate = this.player_.playbackRate() * 1.1;

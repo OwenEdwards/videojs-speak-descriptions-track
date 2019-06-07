@@ -54,6 +54,14 @@ class SpeakDescriptionsTrackTTS {
     }
   }
 
+  voice(voice) {
+    if (!voice) {
+      return this.voice_;
+    }
+
+    this.voice_ = voice;
+  }
+
   /**
    * Dispose of the `SpeakDescriptionsTrackTTS`
    */
@@ -158,6 +166,8 @@ class SpeakDescriptionsTrackTTS {
 
       this.ssu.text = textToSpeak;
       this.ssu.lang = this.increaseLanguageLocalization(track.language);
+
+      this.ssu.voice = this.voice_;
 
       // TODO: user control over these attributes
       this.ssu.rate = this.player_.playbackRate() * 1.1;

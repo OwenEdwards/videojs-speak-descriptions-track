@@ -36,7 +36,11 @@ class SpeakDescriptionsTrackTTS {
     this.isDucked = false;
 
     if (window.speechSynthesis) {
-      window.speechSynthesis.cancel();
+      // workaround for chrome bug
+      window.addEventListener('unload', () => {
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.resume();
+      });
 
       // Stop the textTrackDisplay component's element from having
       //  aria-live="assertive".
@@ -54,6 +58,22 @@ class SpeakDescriptionsTrackTTS {
     }
   }
 
+  voice(voice) {
+    if (voice === undefined && this.voice_) {
+      return this.voice_;
+    } else if (Object.prototype.toString.call(voice) !== '[object SpeechSynthesisVoice]') {
+      // reset to default voice;
+      this.voice_ = null;
+
+      const lang = this.ssu && this.ssu.lang || this.increaseLanguageLocalization(this.player_.language());
+
+      return window.speechSynthesis.getVoices().filter(v => v.lang.startsWith(lang))[0];
+    }
+
+    this.voice_ = voice;
+    return this.voice_;
+  }
+
   /**
    * Dispose of the `SpeakDescriptionsTrackTTS`
    */
@@ -63,9 +83,9 @@ class SpeakDescriptionsTrackTTS {
   play() {
     const speechSynthesis = window.speechSynthesis;
 
-    if (speechSynthesis.paused) {
-      speechSynthesis.resume();
-    }
+    // if (speechSynthesis.paused) {
+    speechSynthesis.resume();
+    // }
   }
 
   pause() {
@@ -159,40 +179,24 @@ class SpeakDescriptionsTrackTTS {
       this.ssu.text = textToSpeak;
       this.ssu.lang = this.increaseLanguageLocalization(track.language);
 
+      // get default voice for language or the user set voice
+      this.ssu.voice = this.voice();
+
       // TODO: user control over these attributes
-      this.ssu.rate = 1.1;
+      this.ssu.rate = this.player_.playbackRate() * 1.1;
       this.ssu.pitch = 1.0;
-      this.ssu.volume = 1.0;
+      this.ssu.volume = this.player_.volume();
 
       // TODO: This audio ducking needs to be made more robust
-      this.ssu.onstart = function(e) {
-        // Duck the player's audio
-        if (!this.isDucked) {
-          this.isDucked = true;
-          this.player_.addClass('vjs-audio-ducked');
-          this.player_.tech_.setVolume(this.player_.tech_.volume() * audioDuckingFactor);
-        }
-      }.bind(this);
+      this.ssu.onstart = this.duck.bind(this);
       this.ssu.onend = function(e) {
         // Speech synthesis of a cue has ended
 
         const delta = (Date.now() - this.ssu.startDate) / 1000;
 
-        videojs.log(`SpeakDescriptionsTrackTTS of cue: ${this.startTime} : ${this.endTime} : ${this.endTime - this.startTime} : ${delta} : ${(delta * 100.0 / (this.endTime - this.startTime)).toFixed(1)}%`);
+        this.log({delta});
 
-        // Un-duck the player's audio
-        if (this.isDucked) {
-          this.isDucked = false;
-          this.player_.removeClass('vjs-audio-ducked');
-          this.player_.tech_.setVolume(this.player_.tech_.volume() / audioDuckingFactor);
-        }
-
-        if (this.extendedPlayerState_ === extendedPlayerState.playingExtended) {
-          videojs.log('Un-pausing playback');
-          this.extendedPlayerState_ = extendedPlayerState.playing;
-          this.player_.tech_.play();
-          this.descriptionExtended = false;
-        }
+        this.utteranceFinished();
       }.bind(this);
       this.ssu.onerror = function(e) {
         // An error occured during speech synthesis
@@ -200,21 +204,9 @@ class SpeakDescriptionsTrackTTS {
         const delta = (Date.now() - this.ssu.startDate) / 1000;
 
         videojs.log.warn(`SSU error (${this.ssu.text})`);
-        videojs.log.warn(`SpeakDescriptionsTrackTTS of cue: ${this.startTime} : ${this.endTime} : ${this.endTime - this.startTime} : ${delta} : ${(delta * 100.0 / (this.endTime - this.startTime)).toFixed(1)}%`);
+        this.log({delta, warn: true});
 
-        // Un-duck the player's audio
-        if (this.isDucked) {
-          this.isDucked = false;
-          this.player_.removeClass('vjs-audio-ducked');
-          this.player_.tech_.setVolume(this.player_.tech_.volume() / audioDuckingFactor);
-        }
-
-        if (this.extendedPlayerState_ === extendedPlayerState.playingExtended) {
-          videojs.log('Un-pausing playback');
-          this.extendedPlayerState_ = extendedPlayerState.playing;
-          this.player_.tech_.play();
-          this.descriptionExtended = false;
-        }
+        this.utteranceFinished();
       }.bind(this);
 
       // Start speaking the new textToSpeak
@@ -286,6 +278,40 @@ class SpeakDescriptionsTrackTTS {
     }
 
     return lang;
+  }
+
+  log({delta, warn = false}) {
+    const log = warn ? videojs.log.warn : videojs.log;
+
+    log(`SpeakDescriptionsTrackTTS of cue: ${this.startTime} : ${this.endTime} : ${this.endTime - this.startTime} : ${delta} : ${(delta * 100.0 / (this.endTime - this.startTime)).toFixed(1)}%`);
+  }
+
+  duck() {
+    if (!this.isDucked) {
+      this.isDucked = true;
+      this.player_.addClass('vjs-audio-ducked');
+      this.player_.tech_.setVolume(this.player_.tech_.volume() * audioDuckingFactor);
+    }
+  }
+
+  unduck() {
+    // Un-duck the player's audio
+    if (this.isDucked) {
+      this.isDucked = false;
+      this.player_.removeClass('vjs-audio-ducked');
+      this.player_.tech_.setVolume(this.player_.tech_.volume() / audioDuckingFactor);
+    }
+  }
+
+  utteranceFinished() {
+    this.unduck();
+
+    if (this.extendedPlayerState_ === extendedPlayerState.playingExtended) {
+      videojs.log('Un-pausing playback');
+      this.extendedPlayerState_ = extendedPlayerState.playing;
+      this.player_.tech_.play();
+      this.descriptionExtended = false;
+    }
   }
 }
 

@@ -34,6 +34,9 @@ class SpeakDescriptionsTrackTTS {
     this.player_ = player;
     this.extendedPlayerState_ = extendedPlayerState.initialized;
     this.isDucked = false;
+    // TODO: user control over this setting
+    this.originalSpeechRate = 1.1;
+    this.speechRate = this.originalSpeechRate;
 
     if (window.speechSynthesis) {
       // workaround for chrome bug
@@ -182,8 +185,8 @@ class SpeakDescriptionsTrackTTS {
       // get default voice for language or the user set voice
       this.ssu.voice = this.voice();
 
-      // TODO: user control over these attributes
-      this.ssu.rate = this.player_.playbackRate() * 1.1;
+      // TODO: user control over these settings
+      this.ssu.rate = this.player_.playbackRate() * this.speechRate;
       this.ssu.pitch = 1.0;
       this.ssu.volume = this.player_.volume();
 
@@ -195,6 +198,21 @@ class SpeakDescriptionsTrackTTS {
         const delta = (Date.now() - this.ssu.startDate) / 1000;
 
         this.log({delta});
+
+        // Adaptively change the speech rate to avoid repeated slight overruns
+        const speechRatio = delta / (this.endTime - this.startTime);
+
+        if (speechRatio > 1.0) {
+          const newSpeechRate = this.speechRate * Math.sqrt(speechRatio);
+
+          videojs.log(`Adjusting speech rate UP from ${this.speechRate} to ${newSpeechRate}`);
+          this.speechRate = newSpeechRate;
+        } else if ((speechRatio < 0.9) && (this.speechRate > this.originalSpeechRate)) {
+          const newSpeechRate = (this.speechRate + this.originalSpeechRate) / 2.0;
+
+          videojs.log(`Adjusting speech rate DOWN from ${this.speechRate} to ${newSpeechRate}`);
+          this.speechRate = newSpeechRate;
+        }
 
         this.utteranceFinished();
       }.bind(this);

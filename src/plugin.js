@@ -154,7 +154,7 @@ class SpeakDescriptionsTrackTTS {
       }
       // TODO: handle any HTML markup in the cues properly; for now,
       //       we just strip out HTML markup.
-      textToSpeak = textToSpeak.join('\r\n').replace(/<(?:.|\n)*?>/gm, '');
+      textToSpeak = textToSpeak.join(' ').replace(/<(?:.|\n)*?>/gm, '');
     }
 
     if (textToSpeak) {

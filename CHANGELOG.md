@@ -1,3 +1,6 @@
+<a name="1.5.0"></a>
+# [1.5.0](https://github.com/OwenEdwards/videojs-speak-descriptions-track/compare/v1.4.0...v1.5.0) (2020-10-09)
+
 <a name="1.4.0"></a>
 # [1.4.0](https://github.com/OwenEdwards/videojs-speak-descriptions-track/compare/v1.3.1...v1.4.0) (2019-06-19)
 

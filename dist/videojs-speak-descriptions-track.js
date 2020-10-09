@@ -1,4 +1,4 @@
-/*! @name videojs-speak-descriptions-track @version 1.3.1 @license MIT */
+/*! @name videojs-speak-descriptions-track @version 1.5.0 @license MIT */
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('video.js'), require('global/window')) :
   typeof define === 'function' && define.amd ? define(['video.js', 'global/window'], factory) :
@@ -8,7 +8,7 @@
   videojs = videojs && videojs.hasOwnProperty('default') ? videojs['default'] : videojs;
   window = window && window.hasOwnProperty('default') ? window['default'] : window;
 
-  var version = "1.3.1";
+  var version = "1.5.0";
 
   /**
    * Player status for extended descriptions (playback of descriptions while pausing the tech)
@@ -43,10 +43,17 @@
     function SpeakDescriptionsTrackTTS(player) {
       this.player_ = player;
       this.extendedPlayerState_ = extendedPlayerState.initialized;
-      this.isDucked = false;
+      this.isDucked = false; // TODO: user control over this setting
+
+      this.originalSpeechRate = 1.1;
+      this.speechRate = this.originalSpeechRate;
 
       if (window.speechSynthesis) {
-        window.speechSynthesis.cancel(); // Stop the textTrackDisplay component's element from having
+        // workaround for chrome bug
+        window.addEventListener('unload', function () {
+          window.speechSynthesis.cancel();
+          window.speechSynthesis.resume();
+        }); // Stop the textTrackDisplay component's element from having
         //  aria-live="assertive".
 
         var textTrackDisplay = player.getChild('textTrackDisplay');
@@ -64,21 +71,35 @@
         }
       }
     }
+
+    var _proto = SpeakDescriptionsTrackTTS.prototype;
+
+    _proto.voice = function voice(_voice) {
+      if (_voice === undefined && this.voice_) {
+        return this.voice_;
+      } else if (Object.prototype.toString.call(_voice) !== '[object SpeechSynthesisVoice]') {
+        // reset to default voice;
+        this.voice_ = null;
+        var lang = this.ssu && this.ssu.lang || this.increaseLanguageLocalization(this.player_.language());
+        return window.speechSynthesis.getVoices().filter(function (v) {
+          return v.lang.startsWith(lang);
+        })[0];
+      }
+
+      this.voice_ = _voice;
+      return this.voice_;
+    }
     /**
      * Dispose of the `SpeakDescriptionsTrackTTS`
      */
-
-
-    var _proto = SpeakDescriptionsTrackTTS.prototype;
+    ;
 
     _proto.dispose = function dispose() {};
 
     _proto.play = function play() {
-      var speechSynthesis = window.speechSynthesis;
+      var speechSynthesis = window.speechSynthesis; // if (speechSynthesis.paused) {
 
-      if (speechSynthesis.paused) {
-        speechSynthesis.resume();
-      }
+      speechSynthesis.resume(); // }
     };
 
     _proto.pause = function pause() {
@@ -163,58 +184,48 @@
 
         this.ssu = new window.SpeechSynthesisUtterance();
         this.ssu.text = textToSpeak;
-        this.ssu.lang = this.increaseLanguageLocalization(track.language); // TODO: user control over these attributes
+        this.ssu.lang = this.increaseLanguageLocalization(track.language); // get default voice for language or the user set voice
 
-        this.ssu.rate = 1.1;
+        this.ssu.voice = this.voice(); // TODO: user control over these settings
+
+        this.ssu.rate = this.player_.playbackRate() * this.speechRate;
         this.ssu.pitch = 1.0;
-        this.ssu.volume = 1.0; // TODO: This audio ducking needs to be made more robust
+        this.ssu.volume = this.player_.volume(); // TODO: This audio ducking needs to be made more robust
 
-        this.ssu.onstart = function (e) {
-          // Duck the player's audio
-          if (!this.isDucked) {
-            this.isDucked = true;
-            this.player_.addClass('vjs-audio-ducked');
-            this.player_.tech_.setVolume(this.player_.tech_.volume() * audioDuckingFactor);
-          }
-        }.bind(this);
+        this.ssu.onstart = this.duck.bind(this);
 
         this.ssu.onend = function (e) {
           // Speech synthesis of a cue has ended
           var delta = (Date.now() - this.ssu.startDate) / 1000;
-          videojs.log("SpeakDescriptionsTrackTTS of cue: " + this.startTime + " : " + this.endTime + " : " + (this.endTime - this.startTime) + " : " + delta + " : " + (delta * 100.0 / (this.endTime - this.startTime)).toFixed(1) + "%"); // Un-duck the player's audio
+          this.log({
+            delta: delta
+          }); // Adaptively change the speech rate to avoid repeated slight overruns
 
-          if (this.isDucked) {
-            this.isDucked = false;
-            this.player_.removeClass('vjs-audio-ducked');
-            this.player_.tech_.setVolume(this.player_.tech_.volume() / audioDuckingFactor);
+          var speechRatio = delta / (this.endTime - this.startTime);
+
+          if (speechRatio > 1.0) {
+            var newSpeechRate = this.speechRate * Math.sqrt(speechRatio);
+            videojs.log("Adjusting speech rate UP from " + this.speechRate + " to " + newSpeechRate);
+            this.speechRate = newSpeechRate;
+          } else if (speechRatio < 0.9 && this.speechRate > this.originalSpeechRate) {
+            var _newSpeechRate = (this.speechRate + this.originalSpeechRate) / 2.0;
+
+            videojs.log("Adjusting speech rate DOWN from " + this.speechRate + " to " + _newSpeechRate);
+            this.speechRate = _newSpeechRate;
           }
 
-          if (this.extendedPlayerState_ === extendedPlayerState.playingExtended) {
-            videojs.log('Un-pausing playback');
-            this.extendedPlayerState_ = extendedPlayerState.playing;
-            this.player_.tech_.play();
-            this.descriptionExtended = false;
-          }
+          this.utteranceFinished();
         }.bind(this);
 
         this.ssu.onerror = function (e) {
           // An error occured during speech synthesis
           var delta = (Date.now() - this.ssu.startDate) / 1000;
           videojs.log.warn("SSU error (" + this.ssu.text + ")");
-          videojs.log.warn("SpeakDescriptionsTrackTTS of cue: " + this.startTime + " : " + this.endTime + " : " + (this.endTime - this.startTime) + " : " + delta + " : " + (delta * 100.0 / (this.endTime - this.startTime)).toFixed(1) + "%"); // Un-duck the player's audio
-
-          if (this.isDucked) {
-            this.isDucked = false;
-            this.player_.removeClass('vjs-audio-ducked');
-            this.player_.tech_.setVolume(this.player_.tech_.volume() / audioDuckingFactor);
-          }
-
-          if (this.extendedPlayerState_ === extendedPlayerState.playingExtended) {
-            videojs.log('Un-pausing playback');
-            this.extendedPlayerState_ = extendedPlayerState.playing;
-            this.player_.tech_.play();
-            this.descriptionExtended = false;
-          }
+          this.log({
+            delta: delta,
+            warn: true
+          });
+          this.utteranceFinished();
         }.bind(this); // Start speaking the new textToSpeak
 
 
@@ -264,6 +275,42 @@
       }
 
       return lang;
+    };
+
+    _proto.log = function log(_ref) {
+      var delta = _ref.delta,
+          _ref$warn = _ref.warn,
+          warn = _ref$warn === void 0 ? false : _ref$warn;
+      var log = warn ? videojs.log.warn : videojs.log;
+      log("SpeakDescriptionsTrackTTS of cue: " + this.startTime + " : " + this.endTime + " : " + (this.endTime - this.startTime) + " : " + delta + " : " + (delta * 100.0 / (this.endTime - this.startTime)).toFixed(1) + "%");
+    };
+
+    _proto.duck = function duck() {
+      if (!this.isDucked) {
+        this.isDucked = true;
+        this.player_.addClass('vjs-audio-ducked');
+        this.player_.tech_.setVolume(this.player_.tech_.volume() * audioDuckingFactor);
+      }
+    };
+
+    _proto.unduck = function unduck() {
+      // Un-duck the player's audio
+      if (this.isDucked) {
+        this.isDucked = false;
+        this.player_.removeClass('vjs-audio-ducked');
+        this.player_.tech_.setVolume(this.player_.tech_.volume() / audioDuckingFactor);
+      }
+    };
+
+    _proto.utteranceFinished = function utteranceFinished() {
+      this.unduck();
+
+      if (this.extendedPlayerState_ === extendedPlayerState.playingExtended) {
+        videojs.log('Un-pausing playback');
+        this.extendedPlayerState_ = extendedPlayerState.playing;
+        this.player_.tech_.play();
+        this.descriptionExtended = false;
+      }
     };
 
     return SpeakDescriptionsTrackTTS;

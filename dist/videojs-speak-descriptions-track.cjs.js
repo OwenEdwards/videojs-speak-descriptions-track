@@ -1,4 +1,4 @@
-/*! @name videojs-speak-descriptions-track @version 1.6.0 @license MIT */
+/*! @name videojs-speak-descriptions-track @version 1.7.0 @license MIT */
 'use strict';
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
@@ -6,7 +6,7 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 var videojs = _interopDefault(require('video.js'));
 var window = _interopDefault(require('global/window'));
 
-var version = "1.6.0";
+var version = "1.7.0";
 
 /**
  * Player status for extended descriptions (playback of descriptions while pausing the tech)
@@ -157,11 +157,13 @@ function () {
         textToSpeak.push(track.activeCues[i].text);
         startTime = Math.min(track.activeCues[i].startTime, startTime);
         endTime = Math.max(track.activeCues[i].endTime, endTime);
-      } // TODO: handle any HTML markup in the cues properly; for now,
+      } // Replace newlines with spaces, since newlines are for visual layout,
+      //  not to convey meaning.
+      // TODO: handle valid HTML markup in the cues properly; for now,
       //       we just strip out HTML markup.
 
 
-      textToSpeak = textToSpeak.join(' ').replace(/<(?:.|\n)*?>/gm, '');
+      textToSpeak = textToSpeak.join(' ').replace(/<(?:.|\n)*?>/gm, '').replace(/\r|\n/gm, ' ');
     }
 
     if (textToSpeak) {

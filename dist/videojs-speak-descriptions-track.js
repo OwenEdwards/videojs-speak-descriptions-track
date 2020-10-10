@@ -1,4 +1,4 @@
-/*! @name videojs-speak-descriptions-track @version 1.6.0 @license MIT */
+/*! @name videojs-speak-descriptions-track @version 1.7.0 @license MIT */
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('video.js'), require('global/window')) :
   typeof define === 'function' && define.amd ? define(['video.js', 'global/window'], factory) :
@@ -8,7 +8,7 @@
   videojs = videojs && videojs.hasOwnProperty('default') ? videojs['default'] : videojs;
   window = window && window.hasOwnProperty('default') ? window['default'] : window;
 
-  var version = "1.6.0";
+  var version = "1.7.0";
 
   /**
    * Player status for extended descriptions (playback of descriptions while pausing the tech)
@@ -159,11 +159,13 @@
           textToSpeak.push(track.activeCues[i].text);
           startTime = Math.min(track.activeCues[i].startTime, startTime);
           endTime = Math.max(track.activeCues[i].endTime, endTime);
-        } // TODO: handle any HTML markup in the cues properly; for now,
+        } // Replace newlines with spaces, since newlines are for visual layout,
+        //  not to convey meaning.
+        // TODO: handle valid HTML markup in the cues properly; for now,
         //       we just strip out HTML markup.
 
 
-        textToSpeak = textToSpeak.join(' ').replace(/<(?:.|\n)*?>/gm, '');
+        textToSpeak = textToSpeak.join(' ').replace(/<(?:.|\n)*?>/gm, '').replace(/\r|\n/gm, ' ');
       }
 
       if (textToSpeak) {

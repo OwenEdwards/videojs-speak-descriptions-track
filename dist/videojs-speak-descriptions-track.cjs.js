@@ -1,4 +1,4 @@
-/*! @name videojs-speak-descriptions-track @version 1.5.0 @license MIT */
+/*! @name videojs-speak-descriptions-track @version 1.6.0 @license MIT */
 'use strict';
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
@@ -6,7 +6,7 @@ function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'defau
 var videojs = _interopDefault(require('video.js'));
 var window = _interopDefault(require('global/window'));
 
-var version = "1.5.0";
+var version = "1.6.0";
 
 /**
  * Player status for extended descriptions (playback of descriptions while pausing the tech)
@@ -161,7 +161,7 @@ function () {
       //       we just strip out HTML markup.
 
 
-      textToSpeak = textToSpeak.join('\r\n').replace(/<(?:.|\n)*?>/gm, '');
+      textToSpeak = textToSpeak.join(' ').replace(/<(?:.|\n)*?>/gm, '');
     }
 
     if (textToSpeak) {

@@ -1,8 +1,8 @@
-/*! @name videojs-speak-descriptions-track @version 1.5.0 @license MIT */
+/*! @name videojs-speak-descriptions-track @version 1.6.0 @license MIT */
 import videojs from 'video.js';
 import window from 'global/window';
 
-var version = "1.5.0";
+var version = "1.6.0";
 
 /**
  * Player status for extended descriptions (playback of descriptions while pausing the tech)
@@ -157,7 +157,7 @@ function () {
       //       we just strip out HTML markup.
 
 
-      textToSpeak = textToSpeak.join('\r\n').replace(/<(?:.|\n)*?>/gm, '');
+      textToSpeak = textToSpeak.join(' ').replace(/<(?:.|\n)*?>/gm, '');
     }
 
     if (textToSpeak) {

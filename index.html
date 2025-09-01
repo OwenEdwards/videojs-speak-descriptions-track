@@ -25,6 +25,43 @@
     <p class="vjs-no-js">To view this video please enable JavaScript, and consider upgrading to a web browser that <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a></p>
   </video>
 
+  </br>
+
+  <label for="speechSpeed">Speech speed</label>:&nbsp;
+  <input type="range" id="speechSpeed" name="speechSpeed" min="0.25" max="4.0" step="0.25" list="speedMarkers" value="1.0">
+
+  <datalist id="speedMarkers">
+    <option value="0.25"></option>
+    <option value="0.5"></option>
+    <option value="0.75"></option>
+    <option value="1.0"></option>
+    <option value="1.5"></option>
+    <option value="2.0"></option>
+    <option value="2.5"></option>
+    <option value="3.0"></option>
+    <option value="4.0"></option>
+  </datalist>
+
+  <br>
+
+  <label for="enableAdaptiveSpeechRate">Enable adaptive speech rate</label>?&nbsp;
+  <input type="checkbox" id="enableAdaptiveSpeechRate" name=""enableAdaptiveSpeechRate">
+
+  <br>
+
+  <label for="audioDuckingFactor">Audio ducking factor</label>:&nbsp;
+  <input type="range" id="audioDuckingFactor" name="audioDuckingFactor" min="0.0" max="1.0" step="0.125" list="audioDuckingFactorMarkers" value="0.25">
+
+  <datalist id="audioDuckingFactorMarkers">
+    <option value="0.0"></option>
+    <option value="0.25"></option>
+    <option value="0.5"></option>
+    <option value="0.75"></option>
+    <option value="1.0"></option>
+  </datalist>
+
+  <br>
+
   <ul>
     <li><a href="/test/debug.html">Run unit tests in browser.</a></li>
     <li><a href="docs/api/">Read generated docs.</a></li>
@@ -34,9 +71,32 @@
   <script src="dist/videojs-speak-descriptions-track.js"></script>
   <script>
     (function(window, videojs) {
-      //var player = window.player = videojs('videojs-speak-descriptions-track-player', {});
+
+      document.getElementById("speechSpeed").onchange = function(){
+        var player = videojs('videojs-speak-descriptions-track-player');
+
+        window.console.log("Speech speed changed from " + player.speakDescriptionsTTS.speechRate + " to " + this.value);
+        player.speakDescriptionsTTS.speechRate = this.value;
+      };
+
+      document.getElementById("enableAdaptiveSpeechRate").onchange = function(){
+        var player = videojs('videojs-speak-descriptions-track-player');
+
+        window.console.log("Adaptive speech rate changed from " + player.speakDescriptionsTTS.adaptiveSpeechRate + " to " + this.checked);
+        player.speakDescriptionsTTS.adaptiveSpeechRate = this.checked;
+      };
+
+      document.getElementById("audioDuckingFactor").onchange = function(){
+        var player = videojs('videojs-speak-descriptions-track-player');
+
+        window.console.log("Audio ducking factor changed from " + player.speakDescriptionsTTS.audioDuckingFactor + " to " + this.value);
+        player.speakDescriptionsTTS.audioDuckingFactor = this.value;
+      };
+
+
 
     }(window, window.videojs));
+
   </script>
 </body>
 </html>

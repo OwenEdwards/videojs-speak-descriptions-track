@@ -17,8 +17,9 @@ const extendedPlayerState = {
   pausedExtended: 'pausedExtended'
 };
 
-// TODO: user control over this attribute?
-const audioDuckingFactor = 0.25;
+const audioDuckingFactorDefault = 0.25;
+const speechRateDefault = 1.1;
+const adaptiveSpeechRateDefault = false;
 
 /**
  * The SpeakDescriptionsTrackTTS component
@@ -34,9 +35,14 @@ class SpeakDescriptionsTrackTTS {
     this.player_ = player;
     this.extendedPlayerState_ = extendedPlayerState.initialized;
     this.isDucked = false;
-    // TODO: user control over this setting
-    this.originalSpeechRate = 1.1;
+
+    // TODO: proper user control over this setting
+    this.originalSpeechRate = speechRateDefault;
     this.speechRate = this.originalSpeechRate;
+    // TODO: proper user control over this setting
+    this.adaptiveSpeechRate = adaptiveSpeechRateDefault;
+    // TODO: proper user control over this setting
+    this.audioDuckingFactor = audioDuckingFactorDefault;
 
     if (window.speechSynthesis) {
       // workaround for chrome bug
@@ -203,19 +209,21 @@ class SpeakDescriptionsTrackTTS {
 
         this.log({delta});
 
-        // Adaptively change the speech rate to avoid repeated slight overruns
-        const speechRatio = delta / (this.endTime - this.startTime);
+        if (this.adaptiveSpeechRate) {
+          // Adaptively change the speech rate to avoid repeated slight overruns
+          const speechRatio = delta / (this.endTime - this.startTime);
 
-        if (speechRatio > 1.0) {
-          const newSpeechRate = this.speechRate * Math.sqrt(speechRatio);
+          if (speechRatio > 1.0) {
+            const newSpeechRate = this.speechRate * Math.sqrt(speechRatio);
 
-          videojs.log(`Adjusting speech rate UP from ${this.speechRate} to ${newSpeechRate}`);
-          this.speechRate = newSpeechRate;
-        } else if ((speechRatio < 0.9) && (this.speechRate > this.originalSpeechRate)) {
-          const newSpeechRate = (this.speechRate + this.originalSpeechRate) / 2.0;
+            videojs.log(`Adjusting speech rate UP from ${this.speechRate} to ${newSpeechRate}`);
+            this.speechRate = newSpeechRate;
+          } else if ((speechRatio < 0.9) && (this.speechRate > this.originalSpeechRate)) {
+            const newSpeechRate = (this.speechRate + this.originalSpeechRate) / 2.0;
 
-          videojs.log(`Adjusting speech rate DOWN from ${this.speechRate} to ${newSpeechRate}`);
-          this.speechRate = newSpeechRate;
+            videojs.log(`Adjusting speech rate DOWN from ${this.speechRate} to ${newSpeechRate}`);
+            this.speechRate = newSpeechRate;
+          }
         }
 
         this.utteranceFinished();
@@ -312,7 +320,9 @@ class SpeakDescriptionsTrackTTS {
     if (!this.isDucked) {
       this.isDucked = true;
       this.player_.addClass('vjs-audio-ducked');
-      this.player_.tech_.setVolume(this.player_.tech_.volume() * audioDuckingFactor);
+      // Save the audioDuckingFactor used to duck the audio, because the audioDuckingFactor and the user volume may have changed when we unduck the audio
+      this._currentDuckingFactor = this.audioDuckingFactor;
+      this.player_.tech_.setVolume(this.player_.tech_.volume() * this._currentDuckingFactor);
     }
   }
 
@@ -321,7 +331,11 @@ class SpeakDescriptionsTrackTTS {
     if (this.isDucked) {
       this.isDucked = false;
       this.player_.removeClass('vjs-audio-ducked');
-      this.player_.tech_.setVolume(this.player_.tech_.volume() / audioDuckingFactor);
+      if (isNaN(this._currentDuckingFactor) || this._currentDuckingFactor > 1.0) {
+        videojs.log(`Error: SpeakDescriptionsTrackTTS - ${this._currentDuckingFactor} is invalid!`);
+      }
+      this.player_.tech_.setVolume(this.player_.tech_.volume() / this._currentDuckingFactor);
+      this._currentDuckingFactor = NaN;
     }
   }
 
@@ -380,7 +394,7 @@ const speakDescriptionsTrack = function(player) {
 
     volume(vol) {
       if (player.speakDescriptionsTTS && player.speakDescriptionsTTS.isDucked) {
-        return vol / audioDuckingFactor;
+        return vol / this._currentDuckingFactor;
       }
 
       return vol;
@@ -388,7 +402,7 @@ const speakDescriptionsTrack = function(player) {
 
     setVolume(vol) {
       if (player.speakDescriptionsTTS && player.speakDescriptionsTTS.isDucked) {
-        return vol * audioDuckingFactor;
+        return vol * this._currentDuckingFactor;
       }
 
       return vol;

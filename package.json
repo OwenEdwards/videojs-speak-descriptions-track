@@ -66,7 +66,7 @@
   },
   "devDependencies": {
     "@videojs/generator-helpers": "~1.0.0",
-    "jsdoc": "BrandonOCasey/jsdoc#feat/plugin-from-cli",
+    "jsdoc": "~3.6.7",
     "karma": "^4.0.0",
     "postcss-cli": "^6.0.0",
     "rollup": "^1.10.0",

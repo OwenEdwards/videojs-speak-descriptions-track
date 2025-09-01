@@ -18,7 +18,7 @@ const extendedPlayerState = {
 };
 
 const audioDuckingFactorDefault = 0.25;
-const speechRateDefault = 1.1;
+const speechRateDefault = 1.0;
 const adaptiveSpeechRateDefault = false;
 
 /**
@@ -37,8 +37,7 @@ class SpeakDescriptionsTrackTTS {
     this.isDucked = false;
 
     // TODO: proper user control over this setting
-    this.originalSpeechRate = speechRateDefault;
-    this.speechRate = this.originalSpeechRate;
+    this.speechRate = speechRateDefault;
     // TODO: proper user control over this setting
     this.adaptiveSpeechRate = adaptiveSpeechRateDefault;
     // TODO: proper user control over this setting
@@ -214,12 +213,14 @@ class SpeakDescriptionsTrackTTS {
           const speechRatio = delta / (this.endTime - this.startTime);
 
           if (speechRatio > 1.0) {
-            const newSpeechRate = this.speechRate * Math.sqrt(speechRatio);
+            // const newSpeechRate = this.speechRate * Math.sqrt(speechRatio);
+            const newSpeechRate = this.speechRate * speechRatio;
 
             videojs.log(`Adjusting speech rate UP from ${this.speechRate} to ${newSpeechRate}`);
             this.speechRate = newSpeechRate;
-          } else if ((speechRatio < 0.9) && (this.speechRate > this.originalSpeechRate)) {
-            const newSpeechRate = (this.speechRate + this.originalSpeechRate) / 2.0;
+
+          } else if (speechRatio < 0.75) {
+            const newSpeechRate = this.speechRate * Math.sqrt(speechRatio);
 
             videojs.log(`Adjusting speech rate DOWN from ${this.speechRate} to ${newSpeechRate}`);
             this.speechRate = newSpeechRate;

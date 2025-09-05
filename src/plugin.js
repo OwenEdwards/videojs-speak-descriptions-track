@@ -38,6 +38,7 @@ class SpeakDescriptionsTrackTTS {
 
     // TODO: proper user control over this setting
     this.speechRate = speechRateDefault;
+    this.minSpeechRate = speechRateDefault;
     // TODO: proper user control over this setting
     this.adaptiveSpeechRate = adaptiveSpeechRateDefault;
     // TODO: proper user control over this setting
@@ -49,6 +50,10 @@ class SpeakDescriptionsTrackTTS {
         window.speechSynthesis.cancel();
         window.speechSynthesis.resume();
       });
+
+      this.totalSsuDuration = 0;
+      this.totalCueDuration = 0;
+      this. totalPauseDuration = 0;
 
       // Stop the textTrackDisplay component's element from having
       //  aria-live="assertive".
@@ -201,34 +206,55 @@ class SpeakDescriptionsTrackTTS {
 
       // TODO: This audio ducking needs to be made more robust
       this.ssu.onstart = this.duck.bind(this);
+
       this.ssu.onend = function(e) {
         // Speech synthesis of a cue has ended
 
-        const delta = (Date.now() - this.ssu.startDate) / 1000;
+        // TODO: Need to handle the situation where the user has paused the video during the SSU utterance.
+        const ssuDuration = (Date.now() - this.ssu.startDate) / 1000;
+        const cueDuration = this.endTime - this.startTime;
+
+        const delta = ssuDuration;
 
         this.log({delta});
 
+        // Performance monitoring
+        // TODO: Need to store the this.speechRate in this monitoring info
+        this.totalSsuDuration += ssuDuration;
+        this.totalCueDuration += cueDuration;
+        if (ssuDuration > cueDuration) {
+          this.totalPauseDuration += ssuDuration - cueDuration;
+        }
+        videojs.log(`totalSsuDuration: ${Number.parseFloat(this.totalSsuDuration).toFixed(3)}, totalCueDuration: ${this.totalCueDuration}, totalPauseDuration: ${Number.parseFloat(this.totalPauseDuration).toFixed(3)}`);
+
+        // this.log({ssuDuration});
+
         if (this.adaptiveSpeechRate) {
           // Adaptively change the speech rate to avoid repeated slight overruns
-          const speechRatio = delta / (this.endTime - this.startTime);
+          const speechRatio = ssuDuration / cueDuration;
 
           if (speechRatio > 1.0) {
-            // const newSpeechRate = this.speechRate * Math.sqrt(speechRatio);
             const newSpeechRate = this.speechRate * speechRatio;
 
             videojs.log(`Adjusting speech rate UP from ${this.speechRate} to ${newSpeechRate}`);
             this.speechRate = newSpeechRate;
+            this.player_.trigger('speechratechange');
 
-          } else if (speechRatio < 0.75) {
-            const newSpeechRate = this.speechRate * Math.sqrt(speechRatio);
+          } else if (speechRatio < 0.667) {
+            // Use the squ
+            const newSpeechRate = Math.max(this.speechRate * Math.sqrt(speechRatio), this.minSpeechRate);
 
-            videojs.log(`Adjusting speech rate DOWN from ${this.speechRate} to ${newSpeechRate}`);
-            this.speechRate = newSpeechRate;
+            if (newSpeechRate !== this.speechRate) {
+              videojs.log(`Adjusting speech rate DOWN from ${this.speechRate} to ${newSpeechRate}`);
+              this.speechRate = newSpeechRate;
+              this.player_.trigger('speechratechange');
+            }
           }
         }
 
         this.utteranceFinished();
       }.bind(this);
+
       this.ssu.onerror = function(e) {
         // An error occured during speech synthesis
 
